@@ -136,10 +136,10 @@ export const subscribe = asyncHandler(async (req: Request, res: Response): Promi
       throw new AppError('Email is already subscribed to the newsletter', 400);
     }
 
-    // Resubscribe
-    const { data, error } = await (
-      supabase.from('newsletter_subscribers').update({ subscribed: true } as any) as any
-    )
+    // @ts-ignore
+    const { data, error } = await supabase
+      .from('newsletter_subscribers')
+      .update({ subscribed: true })
       .eq('email', email)
       .select()
       .single();
@@ -198,9 +198,10 @@ export const subscribe = asyncHandler(async (req: Request, res: Response): Promi
 export const unsubscribe = asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
 
-  const { data, error } = await (
-    supabase.from('newsletter_subscribers').update({ subscribed: false } as any) as any
-  )
+  // @ts-ignore
+  const { data, error } = await supabase
+    .from('newsletter_subscribers')
+    .update({ subscribed: false })
     .eq('email', email)
     .select()
     .single();

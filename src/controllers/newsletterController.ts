@@ -132,7 +132,7 @@ export const sendNewsletter = asyncHandler(async (req: Request, res: Response) =
  *       200:
  *         description: List of templates
  */
-export const getTemplates = asyncHandler(async (req: Request, res: Response) => {
+export const getTemplates = asyncHandler(async (_req: Request, res: Response) => {
   const { data, error } = await supabase
     .from('newsletter_templates')
     .select('*')
@@ -262,6 +262,7 @@ export const updateTemplate = asyncHandler(async (req: Request, res: Response) =
   const { id } = req.params;
   const updateData = req.body;
 
+  // @ts-ignore
   const { data, error } = await (
     supabase.from('newsletter_templates').update(updateData as any) as any
   )

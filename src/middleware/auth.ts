@@ -22,6 +22,6 @@ export const authenticateServiceRole = (req: Request, res: Response, next: NextF
   });
 };
 
-export const authenticatePublic = (req: Request, res: Response, next: NextFunction) => {
+export const authenticatePublic = (_req: Request, _res: Response, next: NextFunction) => {
   next();
 };

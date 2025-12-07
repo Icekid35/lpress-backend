@@ -135,7 +135,7 @@ class EmailService {
   generateNewsletterWrapper(content: string, unsubscribeUrl?: string): string {
     // Process content to ensure images are block-level and one per line for Gmail
     const processedContent = content
-      .replace(/<img([^>]*)style="([^"]*)"([^>]*)>/gi, (match, before, style, after) => {
+      .replace(/<img([^>]*)style="([^"]*)"([^>]*)>/gi, (_match, before, style, after) => {
         // Remove inline-block and ensure display:block for images
         const cleanStyle = style
           .replace(/display\s*:\s*inline-block/gi, '')

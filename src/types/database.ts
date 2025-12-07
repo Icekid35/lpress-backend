@@ -5,6 +5,8 @@ export interface Project {
   title: string;
   description: string;
   location: string;
+  lga?: string;
+  ward?: string;
   status: 'in progress' | 'completed';
   images: string[];
 }
@@ -79,6 +81,16 @@ export interface Database {
         Row: NewsletterSubscriber;
         Insert: Omit<NewsletterSubscriber, 'id' | 'created_at'>;
         Update: Partial<Omit<NewsletterSubscriber, 'id' | 'created_at'>>;
+      };
+      newsletter_campaigns: {
+        Row: NewsletterCampaign;
+        Insert: Omit<NewsletterCampaign, 'id' | 'created_at'>;
+        Update: Partial<Omit<NewsletterCampaign, 'id' | 'created_at'>>;
+      };
+      newsletter_templates: {
+        Row: NewsletterTemplate;
+        Insert: Omit<NewsletterTemplate, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<NewsletterTemplate, 'id' | 'created_at' | 'updated_at'>>;
       };
     };
   };

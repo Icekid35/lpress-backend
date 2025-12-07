@@ -225,6 +225,7 @@ export const updateProject = asyncHandler(async (req: Request, res: Response) =>
   const { id } = req.params;
   const updateData = req.body;
 
+  // @ts-ignore
   const { data, error } = await supabase
     .from('projects')
     .update(updateData)

@@ -194,6 +194,7 @@ export const updateNews = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const updateData = req.body;
 
+  // @ts-ignore
   const { data, error } = await (supabase.from('news').update(updateData as any) as any)
     .eq('id', id)
     .select()

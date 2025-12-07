@@ -1,6 +1,5 @@
-import cron from 'node-cron';
+import * as cron from 'node-cron';
 import { supabase } from '../config/supabase';
-import config from '../config';
 
 export class KeepAliveService {
   private serverUrl: string;
@@ -52,8 +51,8 @@ export class KeepAliveService {
         throw new Error(`Server ping failed with status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log(`  📡 Server ping: ${data.message}`);
+      const data = (await response.json()) as { message?: string };
+      console.log(`  📡 Server ping: ${data.message || 'OK'}`);
     } catch (error) {
       console.error('  ❌ Server ping error:', error);
       throw error;
@@ -62,7 +61,7 @@ export class KeepAliveService {
 
   private async pingDatabase(): Promise<void> {
     try {
-      const { data, error } = await supabase.from('projects').select('id').limit(1);
+      const { error } = await supabase.from('projects').select('id').limit(1);
 
       if (error && error.code !== 'PGRST116') {
         throw error;

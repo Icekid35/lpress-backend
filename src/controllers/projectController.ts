@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import supabase from '../config/supabase';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
-import { Project } from '../types/database';
 
 /**
  * @swagger
@@ -14,10 +13,9 @@ import { Project } from '../types/database';
  * @swagger
  * /api/v1/projects:
  *   get:
- *     summary: Get all projects
+ *     summary: Get all projects (Public)
  *     tags: [Projects]
- *     security:
- *       - ApiKeyAuth: []
+ *     description: Public endpoint - no authentication required
  *     parameters:
  *       - in: query
  *         name: status
@@ -46,13 +44,21 @@ import { Project } from '../types/database';
 export const getAllProjects = asyncHandler(async (req: Request, res: Response) => {
   const { status, limit = 50, offset = 0 } = req.query;
 
-  let query = supabase.from('projects').select('*').order('created_at', { ascending: false });
+  // Build count query
+  let countQuery = supabase.from('projects').select('*', { count: 'exact', head: true });
+  if (status) {
+    countQuery = countQuery.eq('status', status);
+  }
+  const { count: totalCount, error: countError } = await countQuery;
+  if (countError) throw new AppError(countError.message, 400);
 
+  // Build data query
+  let query = supabase.from('projects').select('*').order('created_at', { ascending: false });
   if (status) {
     query = query.eq('status', status);
   }
 
-  const { data, error, count } = await query
+  const { data, error } = await query
     .range(Number(offset), Number(offset) + Number(limit) - 1)
     .limit(Number(limit));
 
@@ -60,7 +66,7 @@ export const getAllProjects = asyncHandler(async (req: Request, res: Response) =
 
   res.status(200).json({
     success: true,
-    count: data?.length || 0,
+    count: totalCount || 0,
     data,
   });
 });
@@ -69,10 +75,9 @@ export const getAllProjects = asyncHandler(async (req: Request, res: Response) =
  * @swagger
  * /api/v1/projects/{id}:
  *   get:
- *     summary: Get project by ID
+ *     summary: Get project by ID (Public)
  *     tags: [Projects]
- *     security:
- *       - ApiKeyAuth: []
+ *     description: Public endpoint - no authentication required
  *     parameters:
  *       - in: path
  *         name: id
@@ -104,10 +109,11 @@ export const getProjectById = asyncHandler(async (req: Request, res: Response) =
  * @swagger
  * /api/v1/projects:
  *   post:
- *     summary: Create a new project
+ *     summary: Create a new project (Admin Only)
  *     tags: [Projects]
+ *     description: Admin access required - use x-admin-secret header
  *     security:
- *       - ServiceRoleAuth: []
+ *       - AdminSecretKey: []
  *     requestBody:
  *       required: true
  *       content:
@@ -152,6 +158,12 @@ export const getProjectById = asyncHandler(async (req: Request, res: Response) =
 export const createProject = asyncHandler(async (req: Request, res: Response) => {
   const projectData = req.body;
 
+  // Ensure description is stored as HTML
+  if (projectData.description) {
+    // Description should already be HTML from the rich text editor
+    projectData.description = projectData.description;
+  }
+
   const { data, error } = await supabase
     .from('projects')
     .insert(projectData as any)
@@ -171,10 +183,11 @@ export const createProject = asyncHandler(async (req: Request, res: Response) =>
  * @swagger
  * /api/v1/projects/{id}:
  *   put:
- *     summary: Update a project
+ *     summary: Update a project (Admin Only)
  *     tags: [Projects]
+ *     description: Admin access required - use x-admin-secret header
  *     security:
- *       - ServiceRoleAuth: []
+ *       - AdminSecretKey: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -214,7 +227,7 @@ export const updateProject = asyncHandler(async (req: Request, res: Response) =>
 
   const { data, error } = await supabase
     .from('projects')
-    .update(updateData as any)
+    .update(updateData)
     .eq('id', id)
     .select()
     .single();
@@ -233,10 +246,11 @@ export const updateProject = asyncHandler(async (req: Request, res: Response) =>
  * @swagger
  * /api/v1/projects/{id}:
  *   delete:
- *     summary: Delete a project
+ *     summary: Delete a project (Admin Only)
  *     tags: [Projects]
+ *     description: Admin access required - use x-admin-secret header
  *     security:
- *       - ServiceRoleAuth: []
+ *       - AdminSecretKey: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -267,10 +281,11 @@ export const deleteProject = asyncHandler(async (req: Request, res: Response) =>
  * @swagger
  * /api/v1/projects/upload:
  *   post:
- *     summary: Upload project images
+ *     summary: Upload project images (Admin Only)
  *     tags: [Projects]
+ *     description: Admin access required - use x-admin-secret header
  *     security:
- *       - ServiceRoleAuth: []
+ *       - AdminSecretKey: []
  *     requestBody:
  *       required: true
  *       content:
@@ -298,7 +313,7 @@ export const uploadImages = asyncHandler(async (req: Request, res: Response) => 
 
   const uploadPromises = files.map(async (file) => {
     const fileName = `projects/${Date.now()}-${file.originalname}`;
-    const { data, error } = await supabase.storage.from('images').upload(fileName, file.buffer, {
+    const { error } = await supabase.storage.from('images').upload(fileName, file.buffer, {
       contentType: file.mimetype,
       upsert: false,
     });

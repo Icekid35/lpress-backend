@@ -13,10 +13,11 @@ import { asyncHandler, AppError } from '../middleware/errorHandler';
  * @swagger
  * /api/v1/complaints:
  *   get:
- *     summary: Get all complaints (Admin only)
+ *     summary: Get all complaints (Admin Only)
  *     tags: [Complaints]
+ *     description: Admin access required - use x-admin-secret header
  *     security:
- *       - ServiceRoleAuth: []
+ *       - AdminSecretKey: []
  *     parameters:
  *       - in: query
  *         name: limit
@@ -37,6 +38,14 @@ import { asyncHandler, AppError } from '../middleware/errorHandler';
 export const getAllComplaints = asyncHandler(async (req: Request, res: Response) => {
   const { limit = 50, offset = 0 } = req.query;
 
+  // Get total count
+  const { count: totalCount, error: countError } = await supabase
+    .from('complaints')
+    .select('*', { count: 'exact', head: true });
+
+  if (countError) throw new AppError(countError.message, 400);
+
+  // Get paginated data
   const { data, error } = await supabase
     .from('complaints')
     .select('*')
@@ -48,7 +57,7 @@ export const getAllComplaints = asyncHandler(async (req: Request, res: Response)
 
   res.status(200).json({
     success: true,
-    count: data?.length || 0,
+    count: totalCount || 0,
     data,
   });
 });
@@ -57,10 +66,11 @@ export const getAllComplaints = asyncHandler(async (req: Request, res: Response)
  * @swagger
  * /api/v1/complaints/{id}:
  *   get:
- *     summary: Get complaint by ID (Admin only)
+ *     summary: Get complaint by ID (Admin Only)
  *     tags: [Complaints]
+ *     description: Admin access required - use x-admin-secret header
  *     security:
- *       - ServiceRoleAuth: []
+ *       - AdminSecretKey: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -93,8 +103,7 @@ export const getComplaintById = asyncHandler(async (req: Request, res: Response)
  *   post:
  *     summary: Submit a new complaint (Public)
  *     tags: [Complaints]
- *     security:
- *       - ApiKeyAuth: []
+ *     description: Public endpoint - no authentication required
  *     requestBody:
  *       required: true
  *       content:
@@ -152,10 +161,11 @@ export const createComplaint = asyncHandler(async (req: Request, res: Response) 
  * @swagger
  * /api/v1/complaints/{id}:
  *   delete:
- *     summary: Delete a complaint (Admin only)
+ *     summary: Delete a complaint (Admin Only)
  *     tags: [Complaints]
+ *     description: Admin access required - use x-admin-secret header
  *     security:
- *       - ServiceRoleAuth: []
+ *       - AdminSecretKey: []
  *     parameters:
  *       - in: path
  *         name: id

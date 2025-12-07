@@ -3,6 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import fs from 'fs';
+import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import config from './config';
 import { swaggerSpec } from './config/swagger';
@@ -46,16 +48,20 @@ if (config.nodeEnv === 'development') {
 }
 
 // Swagger Documentation
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'LPRES Admin API Documentation',
-}));
+app.use(
+  '/api/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'LPRES Admin API Documentation',
+  })
+);
 
 // API Routes
 app.use(`/api/${config.apiVersion}`, routes);
 
 // Health Check
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: 'LPRES Admin API is running',
@@ -65,21 +71,23 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// Root Route
-app.get('/', (req: Request, res: Response) => {
-  res.status(200).json({
-    success: true,
-    message: 'Welcome to LPRES Admin API',
-    version: '1.0.0',
-    documentation: '/api/docs',
-    health: '/health',
-    endpoints: {
-      projects: `/api/${config.apiVersion}/projects`,
-      news: `/api/${config.apiVersion}/news`,
-      complaints: `/api/${config.apiVersion}/complaints`,
-      subscribers: `/api/${config.apiVersion}/subscribers`,
-    },
-  });
+// Root Route - Professional Landing Page
+app.get('/', (_req: Request, res: Response) => {
+  try {
+    const htmlPath = path.join(__dirname, 'views', 'landing.html');
+    let html = fs.readFileSync(htmlPath, 'utf-8');
+
+    // Replace placeholders
+    html = html.replace(/{{API_VERSION}}/g, config.apiVersion);
+    html = html.replace(/{{ENVIRONMENT}}/g, config.nodeEnv);
+
+    res.send(html);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load landing page',
+    });
+  }
 });
 
 // 404 Handler

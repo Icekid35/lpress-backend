@@ -1,10 +1,9 @@
-import { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import config from '../config';
 
 const storage = multer.memoryStorage();
 
-const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   if (config.upload.allowedFileTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {

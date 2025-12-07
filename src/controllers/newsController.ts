@@ -13,10 +13,9 @@ import { asyncHandler, AppError } from '../middleware/errorHandler';
  * @swagger
  * /api/v1/news:
  *   get:
- *     summary: Get all news articles
+ *     summary: Get all news articles (Public)
  *     tags: [News]
- *     security:
- *       - ApiKeyAuth: []
+ *     description: Public endpoint - no authentication required
  *     parameters:
  *       - in: query
  *         name: limit
@@ -35,6 +34,14 @@ import { asyncHandler, AppError } from '../middleware/errorHandler';
 export const getAllNews = asyncHandler(async (req: Request, res: Response) => {
   const { limit = 50, offset = 0 } = req.query;
 
+  // Get total count
+  const { count: totalCount, error: countError } = await supabase
+    .from('news')
+    .select('*', { count: 'exact', head: true });
+
+  if (countError) throw new AppError(countError.message, 400);
+
+  // Get paginated data
   const { data, error } = await supabase
     .from('news')
     .select('*')
@@ -46,7 +53,7 @@ export const getAllNews = asyncHandler(async (req: Request, res: Response) => {
 
   res.status(200).json({
     success: true,
-    count: data?.length || 0,
+    count: totalCount || 0,
     data,
   });
 });
@@ -55,10 +62,9 @@ export const getAllNews = asyncHandler(async (req: Request, res: Response) => {
  * @swagger
  * /api/v1/news/{id}:
  *   get:
- *     summary: Get news article by ID
+ *     summary: Get news article by ID (Public)
  *     tags: [News]
- *     security:
- *       - ApiKeyAuth: []
+ *     description: Public endpoint - no authentication required
  *     parameters:
  *       - in: path
  *         name: id
@@ -89,14 +95,15 @@ export const getNewsById = asyncHandler(async (req: Request, res: Response) => {
  * @swagger
  * /api/v1/news:
  *   post:
- *     summary: Create a new news article
+ *     summary: Create a new news article (Admin Only)
  *     tags: [News]
+ *     description: Admin access required - use x-admin-secret header. Supports both JSON and multipart/form-data for file uploads.
  *     security:
- *       - ServiceRoleAuth: []
+ *       - AdminSecretKey: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -111,8 +118,8 @@ export const getNewsById = asyncHandler(async (req: Request, res: Response) => {
  *                 maxLength: 200
  *               details:
  *                 type: string
+ *                 description: HTML content
  *                 minLength: 20
- *                 maxLength: 10000
  *               event:
  *                 type: string
  *                 minLength: 10
@@ -128,14 +135,19 @@ export const getNewsById = asyncHandler(async (req: Request, res: Response) => {
  *                 type: array
  *                 items:
  *                   type: string
- *                   format: uri
- *                 maxItems: 6
+ *                   format: binary
  *     responses:
  *       201:
  *         description: News article created successfully
  */
 export const createNews = asyncHandler(async (req: Request, res: Response) => {
   const newsData = req.body;
+
+  // Ensure details are stored as HTML
+  if (newsData.details) {
+    // Details should already be HTML from the rich text editor
+    newsData.details = newsData.details;
+  }
 
   const { data, error } = await supabase
     .from('news')
@@ -156,10 +168,11 @@ export const createNews = asyncHandler(async (req: Request, res: Response) => {
  * @swagger
  * /api/v1/news/{id}:
  *   put:
- *     summary: Update a news article
+ *     summary: Update a news article (Admin Only)
  *     tags: [News]
+ *     description: Admin access required - use x-admin-secret header
  *     security:
- *       - ServiceRoleAuth: []
+ *       - AdminSecretKey: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -181,9 +194,7 @@ export const updateNews = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const updateData = req.body;
 
-  const { data, error } = await supabase
-    .from('news')
-    .update(updateData as any)
+  const { data, error } = await (supabase.from('news').update(updateData as any) as any)
     .eq('id', id)
     .select()
     .single();
@@ -202,10 +213,11 @@ export const updateNews = asyncHandler(async (req: Request, res: Response) => {
  * @swagger
  * /api/v1/news/{id}:
  *   delete:
- *     summary: Delete a news article
+ *     summary: Delete a news article (Admin Only)
  *     tags: [News]
+ *     description: Admin access required - use x-admin-secret header
  *     security:
- *       - ServiceRoleAuth: []
+ *       - AdminSecretKey: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -234,10 +246,11 @@ export const deleteNews = asyncHandler(async (req: Request, res: Response) => {
  * @swagger
  * /api/v1/news/upload:
  *   post:
- *     summary: Upload news images
+ *     summary: Upload news images (Admin Only)
  *     tags: [News]
+ *     description: Admin access required - use x-admin-secret header
  *     security:
- *       - ServiceRoleAuth: []
+ *       - AdminSecretKey: []
  *     requestBody:
  *       required: true
  *       content:
@@ -263,7 +276,7 @@ export const uploadImages = asyncHandler(async (req: Request, res: Response) => 
 
   const uploadPromises = files.map(async (file) => {
     const fileName = `news/${Date.now()}-${file.originalname}`;
-    const { data, error } = await supabase.storage.from('images').upload(fileName, file.buffer, {
+    const { error } = await supabase.storage.from('images').upload(fileName, file.buffer, {
       contentType: file.mimetype,
       upsert: false,
     });

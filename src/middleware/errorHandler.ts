@@ -13,7 +13,12 @@ export class AppError extends Error {
   }
 }
 
-export const errorHandler = (err: Error | AppError, req: Request, res: Response, next: NextFunction) => {
+export const errorHandler = (
+  err: Error | AppError,
+  _req: Request,
+  res: Response,
+  _next: NextFunction
+) => {
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
       success: false,
@@ -21,7 +26,6 @@ export const errorHandler = (err: Error | AppError, req: Request, res: Response,
     });
   }
 
-  // Supabase errors
   if (err.message.includes('PGRST')) {
     return res.status(400).json({
       success: false,
@@ -30,7 +34,6 @@ export const errorHandler = (err: Error | AppError, req: Request, res: Response,
     });
   }
 
-  // Log unexpected errors
   console.error('ERROR 💥:', err);
 
   return res.status(500).json({

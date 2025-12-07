@@ -1,7 +1,9 @@
 import app from './app';
 import config from './config';
+import KeepAliveService from './services/keepalive';
 
 const PORT = config.port;
+let keepAliveService: KeepAliveService | null = null;
 
 const server = app.listen(PORT, () => {
   console.log('🚀 ========================================');
@@ -18,11 +20,20 @@ const server = app.listen(PORT, () => {
   console.log(`   - Complaints: /complaints`);
   console.log(`   - Subscribers: /subscribers`);
   console.log('🚀 ========================================');
+
+  if (config.keepAlive.enabled) {
+    keepAliveService = new KeepAliveService(config.serverUrl);
+    keepAliveService.start();
+  } else {
+    console.log('ℹ️  Keep-alive service is disabled');
+  }
 });
 
-// Graceful Shutdown
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM received, shutting down gracefully...');
+  if (keepAliveService) {
+    keepAliveService.stop();
+  }
   server.close(() => {
     console.log('✅ Server closed');
     process.exit(0);
@@ -31,16 +42,21 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('👋 SIGINT received, shutting down gracefully...');
+  if (keepAliveService) {
+    keepAliveService.stop();
+  }
   server.close(() => {
     console.log('✅ Server closed');
     process.exit(0);
   });
 });
 
-// Handle Unhandled Rejections
 process.on('unhandledRejection', (err: Error) => {
   console.error('💥 UNHANDLED REJECTION! Shutting down...');
   console.error(err.name, err.message);
+  if (keepAliveService) {
+    keepAliveService.stop();
+  }
   server.close(() => {
     process.exit(1);
   });

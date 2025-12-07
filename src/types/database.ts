@@ -37,6 +37,26 @@ export interface NewsletterSubscriber {
   subscribed: boolean;
 }
 
+export interface NewsletterTemplate {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  name: string;
+  description?: string;
+  html_content: string;
+  thumbnail?: string;
+}
+
+export interface NewsletterCampaign {
+  id: string;
+  created_at: string;
+  subject: string;
+  html_content: string;
+  sent_to_count: number;
+  failed_count: number;
+  status: 'completed' | 'partial' | 'failed';
+}
+
 export interface Database {
   public: {
     Tables: {

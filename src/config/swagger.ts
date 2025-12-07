@@ -7,98 +7,8 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: 'LPRES Admin API',
       version: '1.0.0',
-      description: `
-# LPRES Admin Backend API
-
-Complete RESTful API for managing projects, news articles, complaints, and newsletter subscriptions.
-
-## Features
-- 🏗️ **Projects Management**: CRUD operations for infrastructure projects
-- 📰 **News Management**: Create and manage news articles with markdown support
-- 📝 **Complaints**: Handle user complaints and feedback
-- 📧 **Newsletter**: Manage newsletter subscriptions
-- 🖼️ **Image Upload**: Upload and manage images via Supabase Storage
-- 🔒 **Authentication**: API key-based authentication (Public & Admin)
-- ✅ **Validation**: Request validation with Zod schemas
-- 📊 **Rate Limiting**: Protection against abuse
-
-## Authentication
-
-### Public Access (Anon Key)
-Use the Supabase anonymous key for public endpoints:
-\`\`\`
-Authorization: Bearer YOUR_ANON_KEY
-\`\`\`
-or
-\`\`\`
-x-api-key: YOUR_ANON_KEY
-\`\`\`
-
-**Allowed Operations:**
-- Read all projects and news
-- Submit complaints
-- Subscribe/unsubscribe from newsletter
-
-### Admin Access (Service Role Key)
-Use the Supabase service role key for admin endpoints:
-\`\`\`
-Authorization: Bearer YOUR_SERVICE_ROLE_KEY
-\`\`\`
-or
-\`\`\`
-x-api-key: YOUR_SERVICE_ROLE_KEY
-\`\`\`
-
-**Allowed Operations:**
-- All CRUD operations on all resources
-- View all complaints
-- Manage subscribers
-
-⚠️ **Security Warning:** Never expose the Service Role Key in client-side code!
-
-## Rate Limits
-- **Public endpoints**: 100 requests per 15 minutes
-- **Admin endpoints**: 1000 requests per 15 minutes
-
-## Response Format
-
-### Success Response
-\`\`\`json
-{
-  "success": true,
-  "message": "Operation successful",
-  "data": { ... },
-  "count": 10
-}
-\`\`\`
-
-### Error Response
-\`\`\`json
-{
-  "success": false,
-  "message": "Error description",
-  "errors": [
-    {
-      "field": "email",
-      "message": "Invalid email format"
-    }
-  ]
-}
-\`\`\`
-
-## Database Schema
-The API uses Supabase (PostgreSQL) with the following tables:
-- \`projects\`: Infrastructure projects with status tracking
-- \`news\`: News articles with markdown content
-- \`complaints\`: User complaints and feedback
-- \`newsletter_subscribers\`: Email subscriptions
-
-## Getting Started
-1. Set up your Supabase project
-2. Run the database schema from \`supabase-schema.sql\`
-3. Configure environment variables in \`.env\`
-4. Start the server: \`npm run dev\`
-      `,
+      description:
+        'Complete RESTful API for managing projects, news, complaints, and newsletter subscriptions.',
       contact: {
         name: 'LPRES Admin Support',
         email: 'support@lpres.gov',
@@ -120,23 +30,12 @@ The API uses Supabase (PostgreSQL) with the following tables:
     ],
     components: {
       securitySchemes: {
-        ApiKeyAuth: {
+        AdminSecretKey: {
           type: 'apiKey',
           in: 'header',
-          name: 'x-api-key',
-          description: 'Supabase Anonymous Key for public access',
-        },
-        ServiceRoleAuth: {
-          type: 'apiKey',
-          in: 'header',
-          name: 'x-api-key',
-          description: 'Supabase Service Role Key for admin access',
-        },
-        BearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'Alternative: Use Authorization header with Bearer token',
+          name: 'x-admin-secret',
+          description:
+            'Admin secret key for protected endpoints (required for POST, PUT, DELETE operations except complaints and subscriptions)',
         },
       },
       schemas: {
@@ -363,19 +262,23 @@ The API uses Supabase (PostgreSQL) with the following tables:
     tags: [
       {
         name: 'Projects',
-        description: 'Infrastructure project management',
+        description:
+          'Infrastructure project management - GET endpoints are public, POST/PUT/DELETE require admin access',
       },
       {
         name: 'News',
-        description: 'News articles and announcements',
+        description:
+          'News articles and announcements - GET endpoints are public, POST/PUT/DELETE require admin access',
       },
       {
         name: 'Complaints',
-        description: 'User complaints and feedback',
+        description:
+          'User complaints and feedback - POST is public, GET/DELETE require admin access',
       },
       {
         name: 'Newsletter',
-        description: 'Newsletter subscription management',
+        description:
+          'Newsletter subscription management - Subscribe/Unsubscribe are public, GET requires admin access',
       },
     ],
   },

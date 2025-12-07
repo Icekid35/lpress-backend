@@ -13,10 +13,11 @@ import { asyncHandler, AppError } from '../middleware/errorHandler';
  * @swagger
  * /api/v1/subscribers:
  *   get:
- *     summary: Get all newsletter subscribers (Admin only)
+ *     summary: Get all newsletter subscribers (Admin Only)
  *     tags: [Newsletter]
+ *     description: Admin access required - use x-admin-secret header
  *     security:
- *       - ServiceRoleAuth: []
+ *       - AdminSecretKey: []
  *     parameters:
  *       - in: query
  *         name: subscribed
@@ -66,10 +67,9 @@ export const getAllSubscribers = asyncHandler(async (req: Request, res: Response
  * @swagger
  * /api/v1/subscribers/count:
  *   get:
- *     summary: Get subscriber count
+ *     summary: Get subscriber count (Public)
  *     tags: [Newsletter]
- *     security:
- *       - ApiKeyAuth: []
+ *     description: Public endpoint - no authentication required
  *     parameters:
  *       - in: query
  *         name: subscribed
@@ -102,8 +102,7 @@ export const getSubscriberCount = asyncHandler(async (req: Request, res: Respons
  *   post:
  *     summary: Subscribe to newsletter (Public)
  *     tags: [Newsletter]
- *     security:
- *       - ApiKeyAuth: []
+ *     description: Public endpoint - no authentication required
  *     requestBody:
  *       required: true
  *       content:
@@ -122,7 +121,7 @@ export const getSubscriberCount = asyncHandler(async (req: Request, res: Respons
  *       400:
  *         description: Validation error or already subscribed
  */
-export const subscribe = asyncHandler(async (req: Request, res: Response) => {
+export const subscribe = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { email } = req.body;
 
   // Check if already exists
@@ -133,25 +132,26 @@ export const subscribe = asyncHandler(async (req: Request, res: Response) => {
     .single();
 
   if (existing) {
-    if (existing.subscribed) {
+    if ((existing as any).subscribed) {
       throw new AppError('Email is already subscribed to the newsletter', 400);
     }
 
     // Resubscribe
-    const { data, error } = await supabase
-      .from('newsletter_subscribers')
-      .update({ subscribed: true } as any)
+    const { data, error } = await (
+      supabase.from('newsletter_subscribers').update({ subscribed: true } as any) as any
+    )
       .eq('email', email)
       .select()
       .single();
 
     if (error) throw new AppError(error.message, 400);
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: 'Successfully resubscribed to the newsletter',
       data,
     });
+    return;
   }
 
   // New subscription
@@ -176,8 +176,7 @@ export const subscribe = asyncHandler(async (req: Request, res: Response) => {
  *   post:
  *     summary: Unsubscribe from newsletter (Public)
  *     tags: [Newsletter]
- *     security:
- *       - ApiKeyAuth: []
+ *     description: Public endpoint - no authentication required
  *     requestBody:
  *       required: true
  *       content:
@@ -199,9 +198,9 @@ export const subscribe = asyncHandler(async (req: Request, res: Response) => {
 export const unsubscribe = asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
 
-  const { data, error } = await supabase
-    .from('newsletter_subscribers')
-    .update({ subscribed: false } as any)
+  const { data, error } = await (
+    supabase.from('newsletter_subscribers').update({ subscribed: false } as any) as any
+  )
     .eq('email', email)
     .select()
     .single();

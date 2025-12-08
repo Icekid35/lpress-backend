@@ -24,7 +24,7 @@ const options: swaggerJsdoc.Options = {
         description: 'Development server',
       },
       {
-        url: 'https://your-production-domain.com/api/v1',
+        url: 'https://lpress-backend.vercel.app/api/v1',
         description: 'Production server',
       },
     ],

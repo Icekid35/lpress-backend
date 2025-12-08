@@ -16,8 +16,7 @@ build/
 *.tsbuildinfo
 
 # Logs
-logs/
-*.log
+
 
 # PM2
 .pm2/

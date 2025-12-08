@@ -1,4 +1,4 @@
-import nodemailer, { Transporter } from 'nodemailer';
+import { Resend } from 'resend';
 import juice from 'juice';
 import config from '../config';
 
@@ -10,27 +10,22 @@ interface EmailOptions {
 }
 
 class EmailService {
-  private transporter: Transporter | null = null;
+  private resend: Resend | null = null;
 
   constructor() {
-    this.initializeTransporter();
+    this.initializeResend();
   }
 
-  private initializeTransporter() {
-    if (!config.email.user || !config.email.password) {
-      console.warn('Email credentials not configured. Newsletter functionality will be disabled.');
+  private initializeResend() {
+    const apiKey = process.env.RESEND_API_KEY;
+    
+    if (!apiKey) {
+      console.warn('Resend API key not configured. Newsletter functionality will be disabled.');
       return;
     }
 
-    this.transporter = nodemailer.createTransport({
-      host: config.email.host,
-      port: config.email.port,
-      secure: config.email.secure,
-      auth: {
-        user: config.email.user,
-        pass: config.email.password,
-      },
-    });
+    this.resend = new Resend(apiKey);
+    console.log('✅ Resend email service initialized');
   }
 
   private inlineCSS(html: string): string {
@@ -43,28 +38,32 @@ class EmailService {
   }
 
   async sendEmail(options: EmailOptions): Promise<boolean> {
-    if (!this.transporter) {
+    if (!this.resend) {
       throw new Error(
-        'Email service not configured. Please set EMAIL_USER and EMAIL_PASSWORD in your environment variables.'
+        'Resend email service not configured. Please set RESEND_API_KEY in your environment variables.'
       );
     }
 
     try {
       const processedHtml = this.inlineCSS(options.html);
 
-      const mailOptions = {
+      const { data, error } = await this.resend.emails.send({
         from: `${config.email.fromName} <${config.email.from}>`,
-        to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
+        to: Array.isArray(options.to) ? options.to : [options.to],
         subject: options.subject,
         html: processedHtml,
         text: options.text || this.stripHtml(options.html),
-      };
+      });
 
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log('Email sent:', info.messageId);
+      if (error) {
+        console.error('Resend error:', error);
+        throw error;
+      }
+
+      console.log('Email sent via Resend:', data?.id);
       return true;
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('Error sending email via Resend:', error);
       throw error;
     }
   }
@@ -118,15 +117,16 @@ class EmailService {
   }
 
   async verifyConnection(): Promise<boolean> {
-    if (!this.transporter) {
+    if (!this.resend) {
       return false;
     }
 
     try {
-      await this.transporter.verify();
-      return true;
+      const { data } = await this.resend.apiKeys.list();
+      console.log('✅ Resend connection verified');
+      return !!data;
     } catch (error) {
-      console.error('Email service verification failed:', error);
+      console.error('Resend service verification failed:', error);
       return false;
     }
   }

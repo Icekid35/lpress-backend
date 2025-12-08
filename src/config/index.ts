@@ -8,7 +8,7 @@ export const config = {
   apiVersion: process.env.API_VERSION || 'v1',
   serverUrl: process.env.SERVER_URL || `http://localhost:${process.env.PORT || '5000'}`,
 
-  adminSecretKey: process.env.ADMIN_SECRET_KEY ,
+  adminSecretKey: process.env.ADMIN_SECRET_KEY,
 
   supabase: {
     url: process.env.SUPABASE_URL!,
@@ -42,12 +42,7 @@ export const config = {
 
   // Email/Newsletter Settings
   email: {
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT || '465', 10),
-    secure: process.env.EMAIL_SECURE === 'true' || process.env.EMAIL_PORT === '465',
-    user: process.env.EMAIL_USER!,
-    password: process.env.EMAIL_PASSWORD!,
-    from: process.env.EMAIL_FROM || process.env.EMAIL_USER!,
+    from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
     fromName: process.env.EMAIL_FROM_NAME || 'LPRES Administration',
   },
 };

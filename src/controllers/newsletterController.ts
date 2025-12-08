@@ -111,9 +111,9 @@ export const sendNewsletter = asyncHandler(async (req: Request, res: Response) =
       throw new AppError('No active subscribers found', 404);
     }
 
-  const emails = subscribers.map((sub: any) => sub.email);
+    const emails = subscribers.map((sub: any) => sub.email);
 
-  const results = await emailService.sendBulkEmails(emails, subject, wrappedHtml);    // Log the campaign
+    const results = await emailService.sendBulkEmails(emails, subject, wrappedHtml); // Log the campaign
     await supabase.from('newsletter_campaigns').insert({
       subject,
       html_content: htmlContent,

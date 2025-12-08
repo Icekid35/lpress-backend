@@ -18,7 +18,7 @@ class EmailService {
 
   private initializeResend() {
     const apiKey = process.env.RESEND_API_KEY;
-    
+
     if (!apiKey) {
       console.warn('Resend API key not configured. Newsletter functionality will be disabled.');
       return;

@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'lpres-admin-backend',
-      script: '/dist/server.js',
+      script: 'dist/server.js',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,

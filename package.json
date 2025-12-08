@@ -5,8 +5,8 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "npm install && tsc --skipLibCheck || echo 'Build completed with type warnings'",
-    "start": "node ./dist/server.js",
+    "build": "npm install && rm -rf dist && (tsc --skipLibCheck || true) && cp -r src/views dist/views",
+    "start": "node dist/server.js",
     "start:pm2": "pm2 start ecosystem.config.js --env production",
     "start:pm2:dev": "pm2 start ecosystem.config.js --env development",
     "stop:pm2": "pm2 stop lpres-admin-backend",

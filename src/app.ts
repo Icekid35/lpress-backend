@@ -75,17 +75,25 @@ app.get('/health', (_req: Request, res: Response) => {
 app.get('/', (_req: Request, res: Response) => {
   try {
     const htmlPath = path.join(__dirname, 'views', 'landing.html');
+
+    if (!fs.existsSync(htmlPath)) {
+      console.error('Landing page not found at:', htmlPath);
+      console.error('__dirname:', __dirname);
+      console.error('Directory contents:', fs.readdirSync(__dirname));
+    }
+
     let html = fs.readFileSync(htmlPath, 'utf-8');
 
-    // Replace placeholders
     html = html.replace(/{{API_VERSION}}/g, config.apiVersion);
     html = html.replace(/{{ENVIRONMENT}}/g, config.nodeEnv);
 
     res.send(html);
   } catch (error) {
+    console.error('Error loading landing page:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to load landing page',
+      error: config.nodeEnv === 'development' ? error : undefined,
     });
   }
 });

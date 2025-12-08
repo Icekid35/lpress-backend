@@ -45,79 +45,96 @@ import { asyncHandler, AppError } from '../middleware/errorHandler';
  *         description: Newsletter sent successfully
  */
 export const sendNewsletter = asyncHandler(async (req: Request, res: Response) => {
-  const { subject, htmlContent, recipientType, testEmail } = req.body;
+  try {
+    console.log('📨 Newsletter send request received');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
 
-  if (!subject || !htmlContent) {
-    throw new AppError('Subject and content are required', 400);
-  }
+    const { subject, htmlContent, recipientType, testEmail } = req.body;
 
-  // Verify email service
-  const isConnected = await emailService.verifyConnection();
-  if (!isConnected) {
-    throw new AppError(
-      'Email service not configured properly. Please check your email settings.',
-      500
-    );
-  }
-
-  // Wrap content in professional template
-  const wrappedHtml = emailService.generateNewsletterWrapper(htmlContent);
-
-  if (recipientType === 'test') {
-    if (!testEmail) {
-      throw new AppError('Test email address is required for test sends', 400);
+    if (!subject || !htmlContent) {
+      console.error('❌ Missing subject or htmlContent');
+      throw new AppError('Subject and content are required', 400);
     }
 
-    await emailService.sendEmail({
-      to: testEmail,
-      subject: `[TEST] ${subject}`,
-      html: wrappedHtml,
+    console.log('🔍 Verifying email service connection...');
+    // Verify email service
+    const isConnected = await emailService.verifyConnection();
+    console.log('Connection result:', isConnected);
+
+    if (!isConnected) {
+      console.error('❌ Email service not connected');
+      throw new AppError(
+        'Email service not configured properly. Please check your email settings.',
+        500
+      );
+    }
+
+    console.log('📧 Newsletter send request:', {
+      recipientType,
+      subject,
+      hasContent: !!htmlContent,
+    });
+
+    // Wrap content in professional template
+    const wrappedHtml = emailService.generateNewsletterWrapper(htmlContent);
+    console.log('📦 HTML wrapped, length:', wrappedHtml.length);
+
+    if (recipientType === 'test') {
+      if (!testEmail) {
+        throw new AppError('Test email address is required for test sends', 400);
+      }
+
+      console.log('🧪 Sending test email to:', testEmail);
+      await emailService.sendEmail({
+        to: testEmail,
+        subject: `[TEST] ${subject}`,
+        html: wrappedHtml,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Test email sent successfully',
+        data: { recipient: testEmail },
+      });
+      return;
+    }
+
+    // Get all subscribed emails
+    const { data: subscribers, error } = await supabase
+      .from('newsletter_subscribers')
+      .select('email')
+      .eq('subscribed', true);
+
+    if (error) throw new AppError(error.message, 400);
+
+    if (!subscribers || subscribers.length === 0) {
+      throw new AppError('No active subscribers found', 404);
+    }
+
+  const emails = subscribers.map((sub: any) => sub.email);
+
+  const results = await emailService.sendBulkEmails(emails, subject, wrappedHtml);    // Log the campaign
+    await supabase.from('newsletter_campaigns').insert({
+      subject,
+      html_content: htmlContent,
+      sent_to_count: results.success,
+      failed_count: results.failed,
+      status: results.failed === 0 ? 'completed' : 'partial',
     });
 
     res.status(200).json({
       success: true,
-      message: 'Test email sent successfully',
-      data: { recipient: testEmail },
+      message: 'Newsletter sent successfully',
+      data: {
+        totalSubscribers: emails.length,
+        successfullySent: results.success,
+        failed: results.failed,
+        errors: results.errors.length > 0 ? results.errors.slice(0, 5) : undefined,
+      },
     });
-    return;
+  } catch (error) {
+    throw error;
   }
-
-  // Get all subscribed emails
-  const { data: subscribers, error } = await supabase
-    .from('newsletter_subscribers')
-    .select('email')
-    .eq('subscribed', true);
-
-  if (error) throw new AppError(error.message, 400);
-
-  if (!subscribers || subscribers.length === 0) {
-    throw new AppError('No active subscribers found', 404);
-  }
-
-  const emails = subscribers.map((sub: any) => sub.email);
-
-  // Send bulk emails
-  const results = await emailService.sendBulkEmails(emails, subject, wrappedHtml);
-
-  // Log the campaign
-  await supabase.from('newsletter_campaigns').insert({
-    subject,
-    html_content: htmlContent,
-    sent_to_count: results.success,
-    failed_count: results.failed,
-    status: results.failed === 0 ? 'completed' : 'partial',
-  });
-
-  res.status(200).json({
-    success: true,
-    message: 'Newsletter sent successfully',
-    data: {
-      totalSubscribers: emails.length,
-      successfullySent: results.success,
-      failed: results.failed,
-      errors: results.errors.length > 0 ? results.errors.slice(0, 5) : undefined,
-    },
-  });
 });
 
 /**

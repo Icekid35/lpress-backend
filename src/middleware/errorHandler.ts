@@ -34,9 +34,7 @@ export const errorHandler = (
     });
   }
 
-  console.error('ERROR 💥:', err);
-
-  return res.status(500).json({
+  console.error('ERROR 💥:', err);  return res.status(500).json({
     success: false,
     message: 'Internal server error',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined,

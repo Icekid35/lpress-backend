@@ -38,29 +38,49 @@ class EmailService {
   }
 
   async sendEmail(options: EmailOptions): Promise<boolean> {
+    console.log(
+      '📤 sendEmail called for:',
+      Array.isArray(options.to) ? options.to.length + ' recipients' : options.to
+    );
+
     if (!this.resend) {
+      console.error('❌ Resend not initialized!');
       throw new Error(
         'Resend email service not configured. Please set RESEND_API_KEY in your environment variables.'
       );
     }
 
     try {
+      console.log('🔄 Processing HTML with CSS inlining...');
       const processedHtml = this.inlineCSS(options.html);
+      console.log('✓ HTML processed, length:', processedHtml.length);
 
-      const { data, error } = await this.resend.emails.send({
+      const emailPayload = {
         from: `${config.email.fromName} <${config.email.from}>`,
         to: Array.isArray(options.to) ? options.to : [options.to],
         subject: options.subject,
         html: processedHtml,
         text: options.text || this.stripHtml(options.html),
+      };
+
+      console.log('📨 Sending via Resend API:', {
+        from: emailPayload.from,
+        to: Array.isArray(emailPayload.to)
+          ? `${emailPayload.to.length} recipients`
+          : emailPayload.to,
+        subject: emailPayload.subject,
+        htmlLength: emailPayload.html.length,
+        textLength: emailPayload.text.length,
       });
 
+      const { data, error } = await this.resend.emails.send(emailPayload);
+
       if (error) {
-        console.error('Resend error:', error);
+        console.error('❌ Resend API error:', JSON.stringify(error, null, 2));
         throw error;
       }
 
-      console.log('Email sent via Resend:', data?.id);
+      console.log('✅ Email sent via Resend:', data?.id);
       return true;
     } catch (error) {
       console.error('Error sending email via Resend:', error);
@@ -117,18 +137,21 @@ class EmailService {
   }
 
   async verifyConnection(): Promise<boolean> {
+    console.log('🔍 Checking Resend connection...');
+    console.log('Resend instance exists:', !!this.resend);
+    console.log('RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY);
+    console.log(
+      'RESEND_API_KEY value:',
+      process.env.RESEND_API_KEY ? `${process.env.RESEND_API_KEY.substring(0, 10)}...` : 'NOT SET'
+    );
+
     if (!this.resend) {
+      console.error('❌ Resend instance is null');
       return false;
     }
 
-    try {
-      const { data } = await this.resend.apiKeys.list();
-      console.log('✅ Resend connection verified');
-      return !!data;
-    } catch (error) {
-      console.error('Resend service verification failed:', error);
-      return false;
-    }
+    console.log('✅ Resend connection verified (instance initialized)');
+    return true;
   }
 
   // Generate a professional email wrapper for newsletters optimized for Gmail

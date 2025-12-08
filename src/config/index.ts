@@ -8,7 +8,7 @@ export const config = {
   apiVersion: process.env.API_VERSION || 'v1',
   serverUrl: process.env.SERVER_URL || `http://localhost:${process.env.PORT || '5000'}`,
 
-  adminSecretKey: process.env.ADMIN_SECRET_KEY || 'icekidsmart',
+  adminSecretKey: process.env.ADMIN_SECRET_KEY ,
 
   supabase: {
     url: process.env.SUPABASE_URL!,

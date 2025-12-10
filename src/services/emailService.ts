@@ -197,7 +197,7 @@ class EmailService {
           <tr>
             <td style="background:linear-gradient(135deg,#064e3b 0%,#059669 100%);background-color:#064e3b;padding:30px 20px;text-align:center;">
               <h1 style="color:#ffffff;margin:0;font-size:28px;font-weight:600;font-family:Arial,Helvetica,sans-serif;">LPRES Administration</h1>
-              <p style="color:#d1fae5;margin:10px 0 0 0;font-size:14px;font-family:Arial,Helvetica,sans-serif;">Local Planning Research and Statistics</p>
+              <p style="color:#d1fae5;margin:10px 0 0 0;font-size:14px;font-family:Arial,Helvetica,sans-serif;">Livestock Productivity & Resilience Project</p>
             </td>
           </tr>
           
@@ -212,7 +212,7 @@ class EmailService {
           <tr>
             <td style="background-color:#f9fafb;padding:30px;text-align:center;border-top:1px solid #e5e7eb;">
               <p style="color:#6b7280;font-size:12px;margin:5px 0;font-family:Arial,Helvetica,sans-serif;">&copy; ${new Date().getFullYear()} LPRES Administration. All rights reserved.</p>
-              <p style="color:#6b7280;font-size:12px;margin:5px 0;font-family:Arial,Helvetica,sans-serif;">This is an official communication from the Local Planning Research and Statistics Office.</p>
+              <p style="color:#6b7280;font-size:12px;margin:5px 0;font-family:Arial,Helvetica,sans-serif;">This is an official communication from the Livestock Productivity & Resilience Project Office.</p>
               ${unsubscribeUrl ? `<p style="margin:10px 0 0 0;"><a href="${unsubscribeUrl}" style="color:#059669;text-decoration:none;font-size:12px;font-family:Arial,Helvetica,sans-serif;">Unsubscribe</a> from this mailing list</p>` : ''}
             </td>
           </tr>
